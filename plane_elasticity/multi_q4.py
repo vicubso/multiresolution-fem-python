@@ -2,6 +2,13 @@ import numpy as np
 from itertools import product
 import matplotlib.pyplot as plt
 from .q4 import Q4
+from .condensation_net_2_by_2 import CondensationNet2by2
+import os
+import torch
+from torch import inf
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 
 class MultiQ4:
     """
@@ -108,7 +115,15 @@ class MultiQ4:
             K[np.ix_(dofs, dofs)] += E[e] *  Ke # Add elemental stiffness matrix to global stiffness matrix
         return K
 
-    def get_condensed_stiffness_matrix_and_numerical_shape_functions(self, E):
+    def get_auxiliary_condensation_matrix(self, E):
+        K_0 = self.get_stiffness_matrix(E)
+        K_aa = K_0[np.ix_(self.vertex_dofs, self.vertex_dofs)]
+        K_bb = K_0[np.ix_(self.other_dofs, self.other_dofs)]
+        K_ab = K_0[np.ix_(self.vertex_dofs, self.other_dofs)]
+        M = np.linalg.solve(K_bb, K_ab.T)
+        return M
+
+    def get_condensed_stiffness_matrix_and_numerical_shape_functions(self, E, ml_condensation=False):
         """
         Compute stiffness matrix of super-element, condensed to the 4 vertices, and corresponding numerical shape functions.
         These are done in the same method to avoid computing -K_bb\K_ab twice.
@@ -118,17 +133,36 @@ class MultiQ4:
             K_vertices (8 x 8 numpy.array): Stiffness matrix of the super-element, condensed to the 4 vertices
             N (n_dofs x 8 numpy.array): Numerical shape functions
         """
-        (f"E.shape = {E.shape}")
         K_0 = self.get_stiffness_matrix(E)
         K_aa = K_0[np.ix_(self.vertex_dofs, self.vertex_dofs)]
         K_bb = K_0[np.ix_(self.other_dofs, self.other_dofs)]
         K_ab = K_0[np.ix_(self.vertex_dofs, self.other_dofs)]
-        Aux = np.linalg.solve(K_bb, K_ab.T) # The computation of K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux
+        # The computation of K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux. Can be done with a neural network or with a direct solve.
+        if ml_condensation:
+            net = self.get_condensation_net()
+            Aux = net.forward(torch.tensor(E, dtype=torch.float32)).detach().numpy()
+            Aux = Aux.reshape(self.other_dofs.size, self.vertex_dofs.size, order='F')
+        else:
+            Aux = self.get_auxiliary_condensation_matrix(E) 
         K_vertices = K_aa - K_ab @ Aux # Condensed stiffness matrix to the 4 vertices
         N = np.zeros((self.n_dofs, self.vertex_dofs.size)) # Numerical shape functions
         N[self.vertex_dofs, :] = np.eye(self.vertex_dofs.size)
         N[self.other_dofs, :] = - Aux
         return K_vertices, N
+
+    def get_condensation_net(self):
+        """
+        Load the network in charge of approximating the auxiliary matrix K_bb\K_ab.
+        """
+        # TODO: Net should take height and width of superelement as input. For not it is hard-coded to length_x=length_y=1
+        # TODO: For now, net is only trained on 2x2 super-elements. Train more nets
+        if self.nel_x == 2 and self.nel_y == 2:
+            net = CondensationNet2by2()
+            weights_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weights_2_by_2.pth')
+            net.load_state_dict(torch.load(weights_path))
+        else :
+            raise ValueError("Only 2x2 super-elements are supported for now")
+        return net
 
     def draw(self, u, axs=plt):
         """

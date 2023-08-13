@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
 from .multi_q4 import MultiQ4
+from .condensation_net_2_by_2 import CondensationNet2by2
 
 class MultiQ4Grid:
     """
@@ -59,7 +60,7 @@ class MultiQ4Grid:
         elements = [None] * n_elm # Array of n_elm MultiQ4() objects # TODO: not sure if needed
         return n_elm, n_nodes, n_dofs, element_matrix, node_matrix, connectivity_matrix, h_x, h_y 
     
-    def get_stiffness_matrix(self, E):
+    def get_stiffness_matrix(self, E, ml_condensation=False):
         """
         Returns the stiffness matrix of the grid.
         Input:
@@ -71,7 +72,7 @@ class MultiQ4Grid:
         elm_nodes = np.array([[0,0], [0,-self.h_y], [self.h_x,0], [self.h_x,-self.h_y]]) # Coordinates of the nodes of the sub-element. All sub-elements are equal. Translation doesn't matter
         element = MultiQ4(self.n_subel_x, self.n_subel_y, elm_nodes, self.D) 
         for elm in range(self.n_elm):
-            Ke, _ = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[elm,:])
+            Ke, _ = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[elm,:], ml_condensation=ml_condensation)
             dofs = self.connectivity_matrix[elm,:]
             K[np.ix_(dofs, dofs)] += Ke
         return K
