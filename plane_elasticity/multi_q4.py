@@ -2,10 +2,6 @@ import numpy as np
 from itertools import product
 import matplotlib.pyplot as plt
 from .q4 import Q4
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
 class MultiQ4:
     """
@@ -39,7 +35,7 @@ class MultiQ4:
     #    - Should the super-element have an array of sub-elements as attribute?
     # TODO: Include BC, solv, etc. in this class
 
-    def __init__(self, nel_x, nel_y, nodes, D, E):
+    def __init__(self, nel_x, nel_y, nodes, D):
         """
         Constructor for the multiresolution Q4 element
         input:
@@ -127,7 +123,7 @@ class MultiQ4:
         K_aa = K_0[np.ix_(self.vertex_dofs, self.vertex_dofs)]
         K_bb = K_0[np.ix_(self.other_dofs, self.other_dofs)]
         K_ab = K_0[np.ix_(self.vertex_dofs, self.other_dofs)]
-        Aux = -np.linalg.solve(K_bb, K_ab.T) # The computation of -K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux
+        Aux = np.linalg.solve(K_bb, K_ab.T) # The computation of K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux
         K_vertices = K_aa - K_ab @ Aux # Condensed stiffness matrix to the 4 vertices
         N = np.zeros((self.n_dofs, self.vertex_dofs.size)) # Numerical shape functions
         N[self.vertex_dofs, :] = np.eye(self.vertex_dofs.size)

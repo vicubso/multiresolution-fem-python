@@ -41,7 +41,6 @@ class MultiQ4Grid:
             self.connectivity_matrix,
             self.h_x,
             self.h_y,
-            self.elements
         ) = self.set_up_discretization()
 
     def set_up_discretization(self):
@@ -58,15 +57,7 @@ class MultiQ4Grid:
         h_x = self.length_x/self.nel_x # Length of elements in x direction
         h_y = self.length_y/self.nel_y # Length of elements in y direction
         elements = [None] * n_elm # Array of n_elm MultiQ4() objects # TODO: not sure if needed
-        X = np.array([[0,0], [0,-h_y], [h_x,0], [h_x,-h_y]])
-        k = 0
-        for i,j in product(range(self.nel_x), range(self.nel_y)):
-            x = i*h_x # Upper left corner of sub-element
-            y = self.length_y - j*h_y 
-            elm_nodes = X + np.array([x,y]) # Coordinates of the nodes of the sub-element
-            elements[k] = MultiQ4(self.n_subel_x, self.n_subel_y, elm_nodes, self.D, self.E[k,:])
-            k += 1
-        return n_elm, n_nodes, n_dofs, element_matrix, node_matrix, connectivity_matrix, h_x, h_y, elements
+        return n_elm, n_nodes, n_dofs, element_matrix, node_matrix, connectivity_matrix, h_x, h_y 
     
     def get_stiffness_matrix(self, E):
         """
@@ -77,10 +68,11 @@ class MultiQ4Grid:
             K (n_dofs x n_dofs numpy.array): Stiffness matrix of the grid
         """
         K = np.zeros((self.n_dofs, self.n_dofs))
-        for e in range(self.n_elm):
-            element = self.elements[e]
-            Ke, _ = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[e,:])
-            dofs = self.connectivity_matrix[e,:]
+        elm_nodes = np.array([[0,0], [0,-self.h_y], [self.h_x,0], [self.h_x,-self.h_y]]) # Coordinates of the nodes of the sub-element. All sub-elements are equal. Translation doesn't matter
+        element = MultiQ4(self.n_subel_x, self.n_subel_y, elm_nodes, self.D) 
+        for elm in range(self.n_elm):
+            Ke, _ = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[elm,:])
+            dofs = self.connectivity_matrix[elm,:]
             K[np.ix_(dofs, dofs)] += Ke
         return K
 
@@ -95,8 +87,17 @@ class MultiQ4Grid:
         # TODO: Tidy up. The draw_subelements functionality should be part of the draw method in the MultiQ4 class
 
         if draw_subelements:
+            elements = [None] * self.n_elm # Array of n_elm MultiQ4() objects # TODO: not sure if needed
+            X = np.array([[0,0], [0,-self.h_y], [self.h_x,0], [self.h_x,-self.h_y]])
+            k = 0
+            for i,j in product(range(self.nel_x), range(self.nel_y)):
+                x = i*self.h_x # Upper left corner of sub-element
+                y = self.length_y - j*self.h_y 
+                elm_nodes = X + np.array([x,y]) # Coordinates of the nodes of the sub-element
+                elements[k] = MultiQ4(self.n_subel_x, self.n_subel_y, elm_nodes, self.D)
+                k += 1
             for e in range(self.n_elm):
-                element = self.elements[e] 
+                element = elements[e] 
                 u_vertices = u[self.connectivity_matrix[e,:]] # Vertex displacements of element
                 _, N = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[e,:])
                 u_element = N @ u_vertices # Displacements of the nodes of the element

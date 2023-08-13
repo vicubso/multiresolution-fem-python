@@ -1,5 +1,21 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     custom_cell_magics: kql
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
+#   kernelspec:
+#     display_name: torch
+#     language: python
+#     name: python3
+# ---
+
 # %%
-%reset -f
+# %reset -f
 import numpy as np
 from plane_elasticity import Q4, MultiQ4, MultiQ4Grid
 import matplotlib.pyplot as plt
@@ -13,8 +29,8 @@ length_x = 12
 length_y = 6
 nel_x = 4
 nel_y = 3
-n_subel_x = 2
-n_subel_y = 2
+n_subel_x = 4
+n_subel_y = 4
 nu = 1 / 3
 D = np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1 - nu) / 2]]) / (1 - nu**2)  # Plane stress constitutive matrix
 E = np.ones((nel_x*nel_y, n_subel_x*n_subel_y))
@@ -31,7 +47,8 @@ free_dofs = np.setdiff1d(all_dofs, fixed_dofs)
 
 # Apply force
 f = np.zeros(grid.n_dofs)
-f[2*right_edge_nodes+1] = -0.01 # Force on the right edge
+f[2*right_edge_nodes+1] = -0.002 # Force on the right edge
+# f[-1]= -0.01
 f[fixed_dofs] = 0
 
 # Get stiffness matrix
@@ -48,6 +65,7 @@ grid.draw(u, E, draw_subelements=True)
 plt.axis('equal');
 plt.axis('off');
 plt.savefig("grid_cantilever.pdf")
+
 
 
 # %% [markdown]
