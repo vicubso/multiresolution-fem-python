@@ -38,7 +38,7 @@ from plane_elasticity import MultiQ4
 
 # %%
 nel_x = 2; nel_y = 2
-nodes = np.array([[0,1],[0,0],[1,1],[1,0]]) # Coordinates of the nodes of the sub-element. All sub-elements are equal. Translation doesn't matter
+nodes = np.array([[0,1],[0,0],[1,1],[1,0]]) # Coordinates of the nodes of the element.
 nu = 1/3
 D = 1/(1-nu**2) * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1-nu)/2]])
 element = MultiQ4(nel_x, nel_y, nodes, D) 

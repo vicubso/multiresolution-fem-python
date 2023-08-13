@@ -155,6 +155,7 @@ class MultiQ4:
         Load the network in charge of approximating the auxiliary matrix K_bb\K_ab.
         """
         # TODO: Net should take height and width of superelement as input. For not it is hard-coded to length_x=length_y=1
+        # ... or most likely there some sort of linear transformation involving the jacobian, so that I can reuse the same network.
         # TODO: For now, net is only trained on 2x2 super-elements. Train more nets
         if self.nel_x == 2 and self.nel_y == 2:
             net = CondensationNet2by2()
