@@ -77,7 +77,7 @@ class MultiQ4Grid:
             K[np.ix_(dofs, dofs)] += Ke
         return K
 
-    def draw(self, u, E, axs=plt, draw_subelements=False):
+    def draw(self, u, E, axs=plt, draw_subelements=False, ml_condensation=False):
         """
         Draws the grid given the displacements.
         Input:
@@ -100,7 +100,7 @@ class MultiQ4Grid:
             for e in range(self.n_elm):
                 element = elements[e] 
                 u_vertices = u[self.connectivity_matrix[e,:]] # Vertex displacements of element
-                _, N = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[e,:])
+                _, N = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[e,:], ml_condensation=ml_condensation)
                 u_element = N @ u_vertices # Displacements of the nodes of the element
                 element.draw(u_element, axs)
         if not draw_subelements:
