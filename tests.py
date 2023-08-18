@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2, n_subel_y = 2, F=-0.01, ml_condensation=False, plot=False, filename=None):
     # Create grid object
     nu = 1 / 3
-    D = np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1 - nu) / 2]]) / (1 - nu**2)  # Plane stress constitutive matrix
+    D = (1/(1-nu**2)) * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1-nu)/2]])
     E = np.ones((nel_x*nel_y, n_subel_x*n_subel_y))
     grid = MultiQ4Grid(length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E)
     u = np.zeros(grid.n_dofs)
@@ -65,10 +65,14 @@ def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2,
         if filename:
             plt.savefig(filename)
 
-    return grid, K, u
 
-cantilever(8,8,8,8,1,1,F = -0.01, ml_condensation=False, plot=True, filename="grid_cantilever_8_8.pdf");
+    return grid, K, f, u
 
+
+# %%
+n = 13
+grid, K, f, u = cantilever(n,n,n,n,1,1,F = -0.01, ml_condensation=False, plot=True);
+u[0]
 
 # %% [markdown]
 # ## Study effect of more subelements in compliance
@@ -77,11 +81,8 @@ cantilever(8,8,8,8,1,1,F = -0.01, ml_condensation=False, plot=True, filename="gr
 compliance = []
 N = 20
 for n_subel in range(1,N):
-    grid, K, u = cantilever(1,1,1,1,n_subel,n_subel,F=-0.01)
+    grid, K, f, u = cantilever(1,1,1,1,n_subel,n_subel,F=-0.01)
     compliance.append(u.T @ K @ u)
-
-plt.plot(compliance, 'o-')
-plt.grid()
 
 # %%
 plt.plot(np.arange(1,N), compliance, 'o-')
@@ -98,21 +99,24 @@ plt.grid()
 compliance_complete = []
 compliance_direct = []
 compliance_ml = []
-N = 30
-for n_elm in range(1,N):
-    grid, K, u = cantilever(2*n_elm, 2*n_elm, 2*n_elm, 2*n_elm, 1,1, F=-0.01, ml_condensation=False)
-    compliance_complete.append(u.T @ K @ u)
-    grid, K, u = cantilever(n_elm, n_elm, n_elm, n_elm, 2, 2, F=-0.01, ml_condensation=False)
-    compliance_direct.append(u.T @ K @ u)
-    grid, K, u = cantilever(n_elm, n_elm, n_elm, n_elm, 2, 2, F=-0.01, ml_condensation=True)
-    compliance_ml.append(u.T @ K @ u)
+N = 20
+for n_elm in np.arange(1,N):
+    grid, K, f, u = cantilever(2*n_elm, 2*n_elm, 2*n_elm, 2*n_elm, 1,1, F=-0.01, ml_condensation=False)
+    # compliance_complete.append(u.T @ K @ u)
+    compliance_complete.append(u.T @ f)
+    grid, K, f, u = cantilever(n_elm, n_elm, n_elm, n_elm, 2, 2, F=-0.01, ml_condensation=False)
+    # compliance_direct.append(u.T @ K @ u)
+    compliance_direct.append(u.T @ f)
+    grid, K, f, u = cantilever(n_elm, n_elm, n_elm, n_elm, 2, 2, F=-0.01, ml_condensation=True)
+    # compliance_ml.append(u.T @ K @ u)
+    compliance_ml.append(u.T @ f)
 
-# %%
 compliance_complete = np.array(compliance_complete)
 compliance_direct = np.array(compliance_direct)
 compliance_ml = np.array(compliance_ml)
 
 compliance_complete = compliance_complete * compliance_direct[0] / compliance_complete[0]
+
 
 # %%
 plt.plot(np.arange(1,N), compliance_complete, '.-', label='Complete system')
@@ -120,9 +124,9 @@ plt.plot(np.arange(1,N), compliance_direct, '+-', label='Direct condensation')
 plt.plot(np.arange(1,N), compliance_ml, 'x-', label='ML condensation')
 plt.xlabel('nelx = nely')
 plt.ylabel('$u ^\intercal K u$')
-plt.xticks(np.arange(1,N,2))
+plt.xticks(np.arange(1,N))
 plt.legend()
 plt.grid()
-plt.savefig('compliance_ml_vs_direct.pdf')
+# plt.savefig('compliance_ml_vs_direct.pdf')
 
 
