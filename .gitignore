@@ -159,5 +159,20 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Notebooks (I'm using pytext to open .py's as notebooks, which often caches them as .ipynb's)
+*.ipynb
+
 # Mac OS junk
 *.DS_Store
+
+# Figures, pdfs, etc
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.eps
+*.tif
+*.tiff
+*.gif
+*.ico
+*.webp
