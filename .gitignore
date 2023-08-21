@@ -166,6 +166,7 @@ cython_debug/
 *.DS_Store
 
 # Figures, pdfs, etc
+*.pdf
 *.png
 *.jpg
 *.jpeg
