@@ -8,7 +8,6 @@ class Q4:
         0 --- 2
         |     |
         1 --- 3
-    # TODO: change numbering to be consistent with MultiQ4 numbering
     """
 
     def __init__(self, nodes, D):

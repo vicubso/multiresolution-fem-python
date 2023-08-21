@@ -25,9 +25,9 @@ class MultiQ4:
         2 --- 5 --- 8
 
     Sub-element nodes are numbered in the same way 
-        3 --- 2
+        0 --- 2
         |     |
-        0 --- 1
+        1 --- 3
     """
     # TODO: Make computation of condensed stiffness optional
     #    - Option 1: Deterministic assembly
@@ -89,7 +89,6 @@ class MultiQ4:
         connectivity_matrix = c_vec + np.concatenate([[-1, 0, 1, 2], 2*self.nel_y+np.array([1, 2, 3, 4])]) # Connectivity matrix
         h_x = (np.max(self.nodes[:, 0]) - np.min(self.nodes[:, 0]))/self.nel_x # Length of sub-elements in x direction
         h_y = (np.max(self.nodes[:, 1]) - np.min(self.nodes[:, 1]))/self.nel_y # Length of sub-elements in y direction
-        # sub_elements = ... # Array of n_elm Q4() objects # TODO (not sure if needed)
         vertex_nodes = np.array([0, self.nel_y, n_nodes-self.nel_y-1, n_nodes-1])
         other_nodes = np.setdiff1d(np.arange(n_nodes), vertex_nodes)
         vertex_dofs = np.vstack([2*vertex_nodes, 2*vertex_nodes+1]).T.flatten() # Vertex degrees of freedom
@@ -105,14 +104,13 @@ class MultiQ4:
         output:
             K (n_dofs x n_dofs numpy.array): Stiffness matrix of the super-element
         """
-        # n_elm, n_nodes, n_dofs, element_matrix, node_matrix, connectivity_matrix = self.set_up_discretization()
         K = np.zeros((self.n_dofs, self.n_dofs))
         X = np.array([[0,0], [0,-self.h_y], [self.h_x,0], [self.h_x,-self.h_y]]) # All the subelements are equal, with width h_x and height h_y. Rigid translation doesn't matter. 
         q4 = Q4(X, self.D) # Q4 object
         Ke = q4.get_stiffness_matrix(1) # Sub-element stiffness matrix, with E=1
         for e in range(self.n_elm):
             dofs = self.connectivity_matrix[e, :] # Super-element DOFs associated with the element
-            K[np.ix_(dofs, dofs)] += E[e] *  Ke # Add elemental stiffness matrix to global stiffness matrix
+            K[np.ix_(dofs, dofs)] += E[e] *  Ke # Add sub-element stiffness matrix to super-element stiffness matrix
         return K
 
     def get_auxiliary_condensation_matrix(self, E):
@@ -137,7 +135,8 @@ class MultiQ4:
         K_aa = K_0[np.ix_(self.vertex_dofs, self.vertex_dofs)]
         K_bb = K_0[np.ix_(self.other_dofs, self.other_dofs)]
         K_ab = K_0[np.ix_(self.vertex_dofs, self.other_dofs)]
-        # The computation of K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux. Can be done with a neural network or with a direct solve.
+        # The computation of K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux.
+        # Can be done with a neural network or with a direct solve.
         if ml_condensation:
             net = self.get_condensation_net()
             Aux = net.forward(torch.tensor(E, dtype=torch.float32)).detach().numpy()
@@ -159,7 +158,7 @@ class MultiQ4:
         # TODO: For now, net is only trained on 2x2 super-elements. Train more nets
         if self.nel_x == 2 and self.nel_y == 2:
             net = CondensationNet2by2()
-            weights_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weights_2_by_2.pth')
+            weights_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weights_2_by_2_vertices.pth')
             net.load_state_dict(torch.load(weights_path))
         else :
             raise ValueError("Only 2x2 super-elements are supported for now")

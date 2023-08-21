@@ -198,5 +198,5 @@ plt.grid()
 
 # %%
 # Save weights
-PATH = './weights_2_by_2.pth'
+PATH = './weights_2_by_2_vertices.pth'
 torch.save(net.state_dict(), PATH) # Network is saved as a dictionary of tensors: {conv1.weight: tensor, conv1.bias: tensor, ...}

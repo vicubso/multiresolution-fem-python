@@ -86,7 +86,6 @@ class MultiQ4Grid:
         """
         # TODO: Modify to shade rectangle according to E
         # TODO: Tidy up. The draw_subelements functionality should be part of the draw method in the MultiQ4 class
-
         if draw_subelements:
             elements = [None] * self.n_elm # Array of n_elm MultiQ4() objects # TODO: not sure if needed
             X = np.array([[0,0], [0,-self.h_y], [self.h_x,0], [self.h_x,-self.h_y]])
