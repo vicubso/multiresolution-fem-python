@@ -14,7 +14,7 @@ class MultiQ4Vertices:
     """
     Multi-resolution Q4 element.
     Consists of nel_x by nel_y Q4 elements.
-    Different Young modulus for each sub-element are allowed and specified by self.E.
+    Different Young modulus for each sub-element are allowed and specified by E.
     Both the full elemental stiffness matrix and the condensed stiffness matrix to the 4 vertices are available.
 
     Nodes and sub-elements are numbered column-wise, starting from north-west corner: 
@@ -28,12 +28,33 @@ class MultiQ4Vertices:
         0 --- 2
         |     |
         1 --- 3
+
+    Sub-element numbering: 
+
+        0 --- 2
+        |     |
+        1 --- 3 
+
+    Super-element numbering:
+
+        0 --- 4 --- 8 --- 12
+        |     |     |     |
+        1 --- 5 --- 9 --- 13
+        |     |     |     | 
+        2 --- 6 --- 10--- 14
+        |     |     |     |
+        3 --- 7 --- 11--- 15
+
+    Condensed super-element numbering
+
+        0 --- 4 --- 6 --- 8
+        |                 |
+        1                 9
+        |                 | 
+        2                 10
+        |                 |
+        3 --- 5 --- 7 --- 11
     """
-    # TODO: Make computation of condensed stiffness optional
-    #    - Option 1: Deterministic assembly
-    #    - Option 2: Assembly through ML model
-    #    - Option 3: No assembly
-    # TODO: Same for numerical shape functions
     # TODO: Think about:
     #    - Which properties should be considered intrisict to the element, and hence treated as attributes of the class?
     #       - E.g. should displacements be considered an attribute of the element?
