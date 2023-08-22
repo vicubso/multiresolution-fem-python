@@ -115,7 +115,6 @@ class MultiQ4Vertices:
 
     def get_auxiliary_condensation_matrix(self, E):
         K_0 = self.get_stiffness_matrix(E)
-        K_aa = K_0[np.ix_(self.vertex_dofs, self.vertex_dofs)]
         K_bb = K_0[np.ix_(self.other_dofs, self.other_dofs)]
         K_ab = K_0[np.ix_(self.vertex_dofs, self.other_dofs)]
         M = np.linalg.solve(K_bb, K_ab.T)
@@ -133,7 +132,6 @@ class MultiQ4Vertices:
         """
         K_0 = self.get_stiffness_matrix(E)
         K_aa = K_0[np.ix_(self.vertex_dofs, self.vertex_dofs)]
-        K_bb = K_0[np.ix_(self.other_dofs, self.other_dofs)]
         K_ab = K_0[np.ix_(self.vertex_dofs, self.other_dofs)]
         # The computation of K_bb\K_ab (which is expensive) is only done once and saved in matrix Aux.
         # Can be done with a neural network or with a direct solve.
@@ -166,7 +164,7 @@ class MultiQ4Vertices:
 
     def draw(self, u, axs=plt):
         """
-        Plots a single element given the displacements
+        Plots a single super-element given all displacements
         input:
             u (n_dofx1 numpy.array): Nodal displacements
             axs (matplotlib.pyplot.axes): Axes object where to draw the element
@@ -187,5 +185,4 @@ class MultiQ4Vertices:
         displ = u[self.vertex_dofs].reshape((-1,2))
         nodes = self.nodes + displ # Displace nodes
         nodes = nodes[[0,1,3,2,0],:]
-        # Thinner marker
         axs.plot(nodes[:,0], nodes[:,1], "bo-", linewidth=.75, markersize=3);
