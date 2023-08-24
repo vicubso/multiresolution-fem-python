@@ -11,7 +11,7 @@ class MultiQ4VerticesGrid:
     """
     # TODO: Maybe I can have a class just called "Grid", that can go as many levels of subdivision as needed
     # TODO: Include BC, solv, etc. in this class
-    def __init__(self, length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E):
+    def __init__(self, length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E, linear_sides=False):
         """
         Constructor for the MultiQ4Grid class.
         Input:
@@ -42,6 +42,7 @@ class MultiQ4VerticesGrid:
             self.h_x,
             self.h_y,
         ) = self.set_up_discretization()
+        self.linear_sides = linear_sides
 
     def set_up_discretization(self): 
         """
@@ -68,7 +69,7 @@ class MultiQ4VerticesGrid:
         """
         K = np.zeros((self.n_dofs, self.n_dofs))
         elm_nodes = np.array([[0,0], [0,-self.h_y], [self.h_x,0], [self.h_x,-self.h_y]]) # Coordinates of the nodes of the sub-element. All sub-elements are equal. Translation doesn't matter
-        element = MultiQ4Vertices(self.n_subel_x, self.n_subel_y, elm_nodes, self.D) 
+        element = MultiQ4Vertices(self.n_subel_x, self.n_subel_y, elm_nodes, self.D, linear_sides=self.linear_sides) 
         for elm in range(self.n_elm):
             Ke, _ = element.get_condensed_stiffness_matrix_and_numerical_shape_functions(E[elm,:], ml_condensation=ml_condensation)
             dofs = self.connectivity_matrix[elm,:]
@@ -92,7 +93,7 @@ class MultiQ4VerticesGrid:
                 x = i*self.h_x # Upper left corner of sub-element
                 y = self.length_y - j*self.h_y 
                 elm_nodes = X + np.array([x,y]) # Coordinates of the nodes of the sub-element
-                elements[k] = MultiQ4Vertices(self.n_subel_x, self.n_subel_y, elm_nodes, self.D)
+                elements[k] = MultiQ4Vertices(self.n_subel_x, self.n_subel_y, elm_nodes, self.D, linear_sides=self.linear_sides)
                 k += 1
             for e in range(self.n_elm):
                 element = elements[e] 

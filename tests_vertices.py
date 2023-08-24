@@ -17,20 +17,53 @@
 # %%
 # %reset -f
 import numpy as np
-from plane_elasticity import Q4, MultiQ4, MultiQ4Grid
+from plane_elasticity import Q4, MultiQ4Vertices, MultiQ4VerticesGrid
 import matplotlib.pyplot as plt
+
+# %% [markdown]
+# ## Test a single super-element
+
+# %%
+nu = 1 / 3
+D = (1/(1-nu**2)) * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1-nu)/2]])
+n = 4
+E = np.ones((n*n, 2*2))
+superelm = MultiQ4Vertices(n, n , np.array([[0,1], [0,0], [1,1], [1,0]]), D, linear_sides=False)
+K = superelm.get_stiffness_matrix(np.ones(n*n))
+
+all_dofs = np.arange(0, 2*(n+1)**2)
+fixed_dofs = np.arange(0,2*(n+1)+1,2)
+fixed_dofs = np.union1d(fixed_dofs, [1])
+free_dofs = np.setdiff1d(all_dofs, fixed_dofs)
+u = np.zeros(2*(n+1)**2)
+f = np.zeros(2*(n+1)**2)
+f[-1] = -0.001
+
+
+K[np.ix_(fixed_dofs, fixed_dofs)] = np.eye(len(fixed_dofs))
+K[np.ix_(fixed_dofs, free_dofs)] = 0
+K[np.ix_(free_dofs, fixed_dofs)] = 0
+
+u[free_dofs] = np.linalg.solve(K[np.ix_(free_dofs, free_dofs)], f[free_dofs])
+# print(np.linalg.norm(K @ u - f))
+# print(np.linalg.det(K[np.ix_(free_dofs, free_dofs)]))
+
+superelm.draw(u)
+# superelm.draw(np.zeros(2*(n+1)**2))
+plt.axis('off');
+plt.savefig("no_linear_bcs.pdf")
 
 
 # %% [markdown]
 # ## Draw deformed cantilever
 
 # %%
-def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2, n_subel_y = 2, F=-0.01, ml_condensation=False, plot=False, filename=None):
+def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2, n_subel_y = 2, F=-0.01, ml_condensation=False, linear_sides=False, plot=False, filename=None):
     # Create grid object
     nu = 1 / 3
     D = (1/(1-nu**2)) * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1-nu)/2]])
     E = np.ones((nel_x*nel_y, n_subel_x*n_subel_y))
-    grid = MultiQ4Grid(length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E)
+    grid = MultiQ4VerticesGrid(length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E, linear_sides=linear_sides)
     u = np.zeros(grid.n_dofs)
 
     left_edge_nodes = np.arange(0, nel_y+1)
@@ -70,9 +103,9 @@ def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2,
 
 
 # %%
-n = 13
-grid, K, f, u = cantilever(n,n,n,n,1,1,F = -0.01, ml_condensation=False, plot=True);
-u[0]
+n = 2
+grid, K, f, u = cantilever(n,n,n,n,2,2,F = -0.005, ml_condensation=False, linear_sides=True, plot=True);
+np.linalg.norm(u)
 
 # %% [markdown]
 # ## Study effect of more subelements in compliance
