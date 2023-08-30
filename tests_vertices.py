@@ -17,7 +17,7 @@
 # %%
 # %reset -f
 import numpy as np
-from plane_elasticity import Q4, MultiQ4, MultiQ4Grid
+from plane_elasticity import Q4, MultiQ4Vertices, MultiQ4VerticesGrid
 import matplotlib.pyplot as plt
 
 
@@ -30,10 +30,11 @@ def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2,
     nu = 1 / 3
     D = (1/(1-nu**2)) * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1-nu)/2]])
     E = np.ones((nel_x*nel_y, n_subel_x*n_subel_y))
-    grid = MultiQ4Grid(length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E)
+    grid = MultiQ4VerticesGrid(length_x, length_y, nel_x, nel_y, n_subel_x, n_subel_y, D, E)
     u = np.zeros(grid.n_dofs)
 
     left_edge_nodes = np.arange(0, nel_y+1)
+
     right_edge_nodes = np.arange(grid.n_nodes-nel_y-1, grid.n_nodes)
     right_edge_mid_node = int((grid.n_nodes-nel_y-1 + grid.n_nodes)/2)
 
@@ -71,7 +72,7 @@ def cantilever(length_x = 12, length_y = 6, nel_x = 6, nel_y = 3 ,n_subel_x = 2,
 
 # %%
 n = 13
-grid, K, f, u = cantilever(n,n,n,n,1,1,F = -0.01, ml_condensation=False, plot=True);
+grid, K, f, u = cantilever(n,n,n,n,2,2,F = -0.01, ml_condensation=True, plot=True);
 u[0]
 
 # %% [markdown]
